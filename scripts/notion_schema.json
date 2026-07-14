@@ -338,10 +338,10 @@
       }
     ],
     "blocks": [
-      { "type": "callout", "text": "Learning Loop", "icon": "🧠" },
+      { "type": "callout", "text": "Learning Loop", "icon": "🔄" },
       { "type": "divider" },
       { "type": "quote", "text": "\"The more I learn, the more I realize how much I don't know.\" — Einstein. Guy had a point." },
-      { "type": "paragraph", "text": "This is a fully relational Learning Operating System — for tracking skill mastery across layers, courses, lessons, projects, and daily log entries." },
+      { "type": "paragraph", "text": "This is Kali's Learning Operating System — a fully relational system for tracking skill mastery across layers, courses, lessons, projects, and daily log entries." },
       { "type": "divider" },
       { "type": "heading_2", "text": "How This Works" },
       { "type": "callout", "text": "The Core Loop: Layer → Course → Lesson → Skills (via Bridge) → Practical Projects → Daily Log. Everything is connected. Nothing lives in a silo." },

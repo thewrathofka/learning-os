@@ -230,10 +230,61 @@ Config variable: `NOTION_DB_BOOTCAMP`
 
 Title: **Learning OS**, with child page(s): Master Learning Roadmap.
 
-Content order: callout → quote → paragraph → "How This Works" heading + callout →
-"The Databases" heading followed by all 13 databases embedded inline (in creation
-order) → "Relationship Map" heading + ASCII diagram → "Workflow" heading + numbered
-steps → "Things Worth Knowing" heading + bulleted notes.
+### Dashboard page content (verbatim)
+
+> **🔄 Learning Loop**
+
+---
+
+> "The more I learn, the more I realize how much I don't know." — Einstein. Guy had a point.
+
+This is Kali's Learning Operating System — a fully relational system for tracking skill mastery across layers, courses, lessons, projects, and daily log entries.
+
+---
+
+#### How This Works
+
+> **💡 The Core Loop: Layer → Course → Lesson → Skills (via Bridge) → Practical Projects → Daily Log. Everything is connected. Nothing lives in a silo.**
+
+---
+
+#### 📂 The Databases
+
+*(all 13 databases embedded here, in creation order)*
+
+---
+
+#### 🔗 Relationship Map
+
+```
+🗂️ Learning Layers (1)
+ ├── 📚 Courses (many)
+ │    └── 📝 Lessons (many)
+ │         └── 🔗 Bridge → 🧠 Skills
+ ├── 💻 Software Projects (many) → 🧠 Skills
+ └── 🔧 Hardware Projects (many) → 🧠 Skills
+
+🧠 Skills Master Library
+ ↔ Lessons, Courses, Layers, Hardware Projects
+
+📓 Learning Log
+ → Layer + Course + Lesson + Software + Hardware + Skills
+```
+
+#### ✍️ Workflow (How to Actually Use This)
+
+1. Add a Course in Courses, link it to the Layer
+2. Create a Layer in Learning Layers (e.g. Layer 1 — Building with LLMs & Agents)
+3. Add Lessons inside that Course, link to Layer too
+4. Add Skills to the Skills Master Library with a Skill Level
+5. Create Bridge entries to track required vs. current mastery per lesson
+
+#### ⚠️ Things Worth Knowing
+
+- Sub-skills on the Skills Library is a relation, not a text field — use it for genuine skill hierarchies.
+- The Bridge Table is where theory meets reality — required mastery vs. current mastery tells you exactly where the gap is.
+- The Learning Log links out to Layer/Course/Lesson/Software/Hardware/Skills but none of those databases link back — the Log is a one-way daily record, not a two-way lookup.
+- Rabbit Holes live in two places: Lessons (notes on what derailed you) and the Log (checkbox + description). Both matter.
 
 ### Child page: Master Learning Roadmap
 

@@ -1,32 +1,64 @@
 # Learning OS
 
-Six Claude Code slash commands, backed by NotebookLM session memory and a 13-database
-Notion workspace, for structured self-directed learning: courses and textbooks you're
-working through, lessons and skills you're building, projects you've shipped, and a daily
-log tying it all together.
+> "The pyramid doesn't care how fast you climb it — it cares whether you actually built something on each level."
 
-Every command remembers your last few sessions (via NotebookLM), teaches at a level
-calibrated to a profile you control, and — where it makes sense — pushes what you did into
-the Notion workspace so you have a durable record instead of a scattered chat history.
+Learning OS is a philosophy about how to learn, backed by six Claude Code slash commands and
+a 13-database Notion workspace that make the philosophy operational instead of aspirational.
 
-## The core loop
+## The philosophy: a top-down pyramid built around immediate value
+
+Most self-directed learning plans start at the bottom — theory first, foundations first,
+"you need to understand X before you can touch Y." This system inverts that. You start where
+you can build and earn from day one, then progressively go deeper toward foundational
+knowledge as you actually need it. Each layer makes you better at the layers above it. You
+never stop being a builder — you just become a more powerful one.
+
+### The Four Layers
+
+Every layer runs two parallel tracks in this system's original form — **AI Play** (software,
+models, agents, automation) and **Hardware Play** (Arduino → Raspberry Pi → bridging the
+two) — though the pyramid works for any two tracks you want to build across.
+
+1. **Layer 1 — Use & Build with AI.** Be a power user. Master AI tools, prompting, and simple
+   automations. Build without needing to code. The goal is fluency across the entire tool
+   ecosystem — knowing which tool to reach for, how to talk to it, and how to string tools
+   together into real workflows.
+2. **Layer 2 — Build Better.** Add just enough technical skill to build real things. You
+   become a builder, not just a user — JSON, APIs, web basics, Python, SQL, GitHub, terminal.
+3. **Layer 3 — Understand.** Go from building to understanding *why* things work. You can now
+   reason about systems, not just use them — CS fundamentals, data engineering, software
+   architecture, how the models you've been using actually work.
+4. **Layer 4 — Root Knowledge.** The foundation everything else sits on. Most people never
+   come here — it separates engineers from scientists. Math, electrical engineering, genuine
+   model-level AI understanding.
+
+`/learning-os-setup` builds this out as a real "Master Learning Roadmap" page in your Notion
+workspace, not just a README description — see the child-page section of
+[docs/NOTION_SCHEMA.md](docs/NOTION_SCHEMA.md) for the exact text it ships.
+
+## The mechanism: a fully relational learning operating system
+
+The six commands and the Notion workspace exist to make that philosophy trackable instead of
+just aspirational — a place where "what have I actually learned, and where's the gap between
+what a lesson requires and what I currently have" is an answerable question, not a feeling.
 
 ```
 Learning Layer → Course → Lesson → Skills (via Bridge) → Practical Projects → Learning Log
 ```
 
-Layers are big multi-month arcs ("Building with LLMs & Agents"). Courses and Textbooks sit
-inside a Layer. Lessons sit inside a Course. The Lesson-Skill Bridge tracks required vs.
-current mastery per skill per lesson — that gap is the whole point of the system. Projects
-(software or hardware) and daily Learning Log entries close the loop back to real work.
+Layers are the big multi-month arcs (Layer 1, Layer 2, ...). Courses and Textbooks sit inside
+a Layer. Lessons sit inside a Course. The **Lesson-Skill Bridge** is the secret weapon — it's
+where theory meets reality: required mastery vs. current mastery tells you exactly where the
+gap is. Projects (software or hardware) and daily Learning Log entries close the loop back to
+real work. Everything is connected. Nothing lives in a silo.
+
 See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for the full relationship map and
 [docs/NOTION_SCHEMA.md](docs/NOTION_SCHEMA.md) for every database's exact fields.
 
-`/learning-os-setup` also creates a "Master Learning Roadmap" child page under the dashboard,
-containing a general **Four Layers** framework (Use & Build → Build Better → Understand →
-Root Knowledge) for thinking about where a given Course or Lesson sits on the
-beginner-to-foundational spectrum — see the child-page section of
-[docs/NOTION_SCHEMA.md](docs/NOTION_SCHEMA.md) for the full text.
+The six commands are how you actually interact with this day to day — each remembers your
+last few sessions (via NotebookLM), teaches at a level calibrated to a profile you control,
+and — where it makes sense — pushes what you did into the Notion workspace so you have a
+durable record instead of a scattered chat history.
 
 ## Commands
 
@@ -58,8 +90,9 @@ git clone <this-repo> ~/projects/learning-os
 ```
 
 Then in Claude Code, run `/learning-os-setup` and follow the prompts — it builds the 13
-Notion databases and dashboard page in your own workspace via the Notion API (no manual
-"duplicate this template" step, no dependency on anyone else's shared page) and writes
+Notion databases, the dashboard page (with the philosophy above written into it, not just the
+schema), and the Master Learning Roadmap page in your own workspace via the Notion API (no
+manual "duplicate this template" step, no dependency on anyone else's shared page) and writes
 `~/.learning-os/config.env`.
 
 ## Personalizing
@@ -77,6 +110,10 @@ skip it, each command falls back to a sensible default profile.
 - Newly created databases are requested as inline (`is_inline: true`) so they render embedded
   in the dashboard page rather than as separate subpage links. If they show up as subpages
   instead, drag them inline manually in Notion — a one-time fix.
+- The original workspace this was extracted from also had a "Master Project Pipeline" section
+  on the dashboard, pointing at a database that turned out to be empty and titleless when
+  inspected — never actually built out. It's intentionally left out of the shipped template
+  rather than replicated as broken.
 
 ## License
 
