@@ -1,0 +1,344 @@
+{
+  "_comment": "Single source of truth for the Learning OS Notion template. Consumed by setup_notion.py to build the workspace, and mirrored in docs/NOTION_SCHEMA.md. Every relation's dual/single classification below was verified against the live personal template by cross-checking each database's full property list against every other's — a relation is only 'dual' if the target database independently shows a matching reciprocal property; otherwise it's a one-directional 'single' relation. Do not assume dual by default.",
+  "notion_version": "2022-06-28",
+  "databases": {
+    "learning_layers": {
+      "title": "Learning Layers",
+      "config_var": "NOTION_DB_LEARNING_LAYERS",
+      "properties": {
+        "Layer Name": { "type": "title" },
+        "Layer Number": { "type": "number" },
+        "Description": { "type": "rich_text" },
+        "Start Date": { "type": "date" },
+        "Target Completion Date": { "type": "date" },
+        "Status": { "type": "select", "options": ["Active", "In Progress", "Completed"] }
+      },
+      "relations": [
+        { "property": "Related Skills", "target": "skills_master_library", "type": "dual", "reciprocal_name": "Related Layers" }
+      ]
+    },
+    "courses": {
+      "title": "Courses",
+      "config_var": "NOTION_DB_COURSES",
+      "properties": {
+        "Course Name": { "type": "title" },
+        "Course URL": { "type": "url" },
+        "Description": { "type": "rich_text" },
+        "Priority": { "type": "select", "options": ["Right Away", "Next", "For Later Layers", "Queued"] },
+        "Start Date": { "type": "date" },
+        "Topic": { "type": "select", "options": ["Math for AI", "RAG", "Problem Solving", "Programming", "LLMs & Agents", "Statistics & Probability"] },
+        "NotebookLM URL": { "type": "url" },
+        "Status": { "type": "select", "options": ["Queued", "In Progress", "Completed", "Backlog"] }
+      },
+      "relations": [
+        { "property": "Textbooks", "target": "textbooks", "type": "dual", "reciprocal_name": "Related Courses" },
+        { "property": "Lessons", "target": "lessons", "type": "dual", "reciprocal_name": "Parent Course" },
+        { "property": "Related Skills", "target": "skills_master_library", "type": "dual", "reciprocal_name": "Related Courses" },
+        { "property": "Parent Layer", "target": "learning_layers", "type": "single" }
+      ]
+    },
+    "lessons": {
+      "title": "Lessons",
+      "config_var": "NOTION_DB_LESSONS",
+      "properties": {
+        "Lesson Name": { "type": "title" },
+        "Rabbit Holes Encountered": { "type": "rich_text" },
+        "Textbook Chapters": { "type": "rich_text" },
+        "Topic": { "type": "select", "options": ["Math for AI", "RAG", "Problem Solving", "Programming", "LLMs & Agents", "Statistics & Probability"] },
+        "Priority": { "type": "select", "options": ["Right Away", "Next", "For Later Layers", "Queued"] },
+        "Date Started": { "type": "date" },
+        "Status": { "type": "select", "options": ["In Progress", "Completed", "Derailed"] }
+      },
+      "relations": [
+        { "property": "Resources", "target": "lesson_resources", "type": "dual", "reciprocal_name": "Lesson" },
+        { "property": "Textbooks", "target": "textbooks", "type": "dual", "reciprocal_name": "Related Lessons" },
+        { "property": "Related Skills", "target": "skills_master_library", "type": "dual", "reciprocal_name": "Related Lessons" },
+        { "property": "Parent Layer", "target": "learning_layers", "type": "single" },
+        {
+          "property": "Parent Course",
+          "target": "courses",
+          "type": "auto_created",
+          "note": "created automatically as the reciprocal of courses.Lessons — do not create independently"
+        }
+      ]
+    },
+    "skills_master_library": {
+      "title": "Skills Master Library",
+      "config_var": "NOTION_DB_SKILLS_MASTER",
+      "properties": {
+        "Skill Name": { "type": "title" },
+        "Skill Level": {
+          "type": "select",
+          "options": ["Zero", "I don't get it", "I should get it", "I am familiar", "I get it", "Forgot everything", "Pretty Pretty Pretty Good"]
+        },
+        "Knowledge in Layer": { "type": "number" }
+      },
+      "relations": [
+        {
+          "property": "Parent Skill",
+          "target": "skills_master_library",
+          "type": "dual_self",
+          "reciprocal_name": "Sub-skills",
+          "note": "Self-referencing relation. Parent Skill / Sub-skills is ONE dual_property pair pointing at skills_master_library itself — creating them as two independent relations would produce four columns that don't behave as inverses."
+        },
+        { "property": "Hardware Projects", "target": "practical_projects_hardware", "type": "dual", "reciprocal_name": "Technologies / Skills Used" },
+        { "property": "Software Projects", "target": "practical_projects_software", "type": "single" },
+        {
+          "property": "Related Layers",
+          "target": "learning_layers",
+          "type": "auto_created",
+          "note": "created automatically as the reciprocal of learning_layers.Related Skills"
+        },
+        {
+          "property": "Related Courses",
+          "target": "courses",
+          "type": "auto_created",
+          "note": "created automatically as the reciprocal of courses.Related Skills"
+        },
+        {
+          "property": "Related Lessons",
+          "target": "lessons",
+          "type": "auto_created",
+          "note": "created automatically as the reciprocal of lessons.Related Skills"
+        }
+      ]
+    },
+    "lesson_skill_bridge": {
+      "title": "Lesson-Skill Bridge",
+      "config_var": "NOTION_DB_LESSON_SKILL_BRIDGE",
+      "properties": {
+        "Bridge Entry": { "type": "title" },
+        "Importance": { "type": "select", "options": ["Primary", "Secondary", "Foundational"] },
+        "Discovery Date": { "type": "date" },
+        "Required Mastery Level": { "type": "number" },
+        "Current Mastery Level": { "type": "number" }
+      },
+      "relations": [
+        { "property": "Lesson", "target": "lessons", "type": "single" },
+        { "property": "Skill", "target": "skills_master_library", "type": "single" }
+      ]
+    },
+    "practical_projects_software": {
+      "title": "Practical Projects - Software",
+      "config_var": "NOTION_DB_PROJECTS_SOFTWARE",
+      "properties": {
+        "Project Name": { "type": "title" },
+        "Description": { "type": "rich_text" },
+        "GitHub / Code Link": { "type": "url" },
+        "Key Learnings": { "type": "rich_text" },
+        "Start Date": { "type": "date" },
+        "Completion Date": { "type": "date" },
+        "Status": { "type": "select", "options": ["Completed", "In Progress"] }
+      },
+      "relations": [
+        {
+          "property": "Software Projects",
+          "target": "skills_master_library",
+          "type": "auto_created",
+          "note": "no reciprocal — skills_master_library.Software Projects is single_property, so this database intentionally has no relation column pointing back"
+        }
+      ]
+    },
+    "practical_projects_hardware": {
+      "title": "Practical Projects - Hardware",
+      "config_var": "NOTION_DB_PROJECTS_HARDWARE",
+      "properties": {
+        "Project Name": { "type": "title" },
+        "Description": { "type": "rich_text" },
+        "Materials / Components Needed": { "type": "rich_text" },
+        "Key Learnings": { "type": "rich_text" },
+        "Start Date": { "type": "date" },
+        "Completion Date": { "type": "date" },
+        "Status": { "type": "select", "options": ["Planning", "In Progress", "Completed", "On Hold"] }
+      },
+      "relations": [
+        { "property": "Related Course", "target": "courses", "type": "single" },
+        { "property": "Parent Layer", "target": "learning_layers", "type": "single" },
+        { "property": "Related Lessons", "target": "lessons", "type": "single" },
+        {
+          "property": "Technologies / Skills Used",
+          "target": "skills_master_library",
+          "type": "auto_created",
+          "note": "created automatically as the reciprocal of skills_master_library.Hardware Projects"
+        }
+      ]
+    },
+    "learning_log": {
+      "title": "Learning Log",
+      "config_var": "NOTION_DB_LEARNING_LOG",
+      "properties": {
+        "Log Entry": { "type": "title" },
+        "Discoveries": { "type": "rich_text" },
+        "Date": { "type": "date" },
+        "Rabbit Hole Encountered": { "type": "checkbox" },
+        "Notes / Reflections": { "type": "rich_text" },
+        "Time Spent (hrs)": { "type": "number" },
+        "Progress on Mastery Levels": { "type": "rich_text" },
+        "Rabbit Hole Description": { "type": "rich_text" }
+      },
+      "relations": [
+        { "property": "Software Project Worked On", "target": "practical_projects_software", "type": "single" },
+        { "property": "Skills Practiced Today", "target": "skills_master_library", "type": "single" },
+        { "property": "Course Worked On", "target": "courses", "type": "single" },
+        { "property": "Layer Worked On", "target": "learning_layers", "type": "single" },
+        { "property": "Textbooks", "target": "textbooks", "type": "single" },
+        { "property": "Hardware Project Worked On", "target": "practical_projects_hardware", "type": "single" },
+        { "property": "Lesson Worked On", "target": "lessons", "type": "single" }
+      ]
+    },
+    "lesson_resources": {
+      "title": "Lesson Resources",
+      "config_var": "NOTION_DB_LESSON_RESOURCES",
+      "properties": {
+        "Resource Name": { "type": "title" },
+        "Notes": { "type": "rich_text" },
+        "Type": { "type": "select", "options": ["Article", "Documentation", "Video", "Tool", "Book", "Other"] },
+        "URL": { "type": "url" },
+        "Date Added": { "type": "date" },
+        "File / Attachment": { "type": "files" },
+        "Review Status": { "type": "select", "options": ["Should Review", "Reviewed"] }
+      },
+      "relations": [
+        {
+          "property": "Lesson",
+          "target": "lessons",
+          "type": "auto_created",
+          "note": "created automatically as the reciprocal of lessons.Resources"
+        }
+      ]
+    },
+    "textbooks": {
+      "title": "Textbooks",
+      "config_var": "NOTION_DB_TEXTBOOKS",
+      "properties": {
+        "Book Name": { "type": "title" },
+        "Topic": { "type": "select", "options": ["Math for AI", "RAG", "Problem Solving", "Programming", "LLMs & Agents", "Statistics & Probability"] },
+        "Date Started": { "type": "date" },
+        "Pages Completed": { "type": "number" },
+        "Priority": { "type": "select", "options": ["Right Away", "Next", "For Later Layers"] },
+        "Total Pages": { "type": "number" },
+        "Author": { "type": "rich_text" },
+        "Status": { "type": "select", "options": ["Not Started", "In Progress", "Completed"] },
+        "NotebookLM URL": { "type": "url" }
+      },
+      "relations": [
+        { "property": "Related Skills", "target": "skills_master_library", "type": "single" },
+        { "property": "Parent Layer", "target": "learning_layers", "type": "single" },
+        {
+          "property": "Related Courses",
+          "target": "courses",
+          "type": "auto_created",
+          "note": "created automatically as the reciprocal of courses.Textbooks"
+        },
+        {
+          "property": "Related Lessons",
+          "target": "lessons",
+          "type": "auto_created",
+          "note": "created automatically as the reciprocal of lessons.Textbooks"
+        }
+      ]
+    },
+    "textbook_resources": {
+      "title": "Textbook Resources",
+      "config_var": "NOTION_DB_TEXTBOOK_RESOURCES",
+      "properties": {
+        "Resource Name": { "type": "title" },
+        "Description": { "type": "rich_text" },
+        "Chapter Pairing": { "type": "rich_text" },
+        "Resource Type": { "type": "select", "options": ["YouTube Video", "YouTube Playlist", "YouTube Channel", "Guide/Article", "Udemy Course"] },
+        "URL": { "type": "url" }
+      },
+      "relations": [
+        { "property": "Related Textbook", "target": "textbooks", "type": "single" }
+      ]
+    },
+    "chaos_hour": {
+      "title": "Chaos Hour",
+      "config_var": "NOTION_DB_CHAOS_HOUR",
+      "properties": {
+        "Entry": { "type": "title" },
+        "Date & Time": { "type": "date" },
+        "Description": { "type": "rich_text" },
+        "Useful Learned": { "type": "rich_text" },
+        "Feeling Afterwards": { "type": "select", "options": ["Energized", "Inspired", "Focused", "Neutral", "Scattered", "Drained", "Frustrated"] },
+        "Action Necessary": { "type": "checkbox" },
+        "Hours": { "type": "number" },
+        "Action Steps": { "type": "rich_text" }
+      },
+      "relations": []
+    },
+    "bootcamp": {
+      "title": "Bootcamp",
+      "config_var": "NOTION_DB_BOOTCAMP",
+      "properties": {
+        "Track Name": { "type": "title" },
+        "Current Position": { "type": "rich_text" },
+        "Progress Log": { "type": "rich_text" },
+        "Starting Position": { "type": "rich_text" },
+        "Category": { "type": "select", "options": ["Math", "Applied Reading", "Python", "Terminal", "Code Reading", "Project", "Slow Burn", "CS Fundamentals", "ML Certification", "Algorithms"] },
+        "Source": { "type": "select", "options": ["/mathtutor", "/tutor", "/coursetutor", "/code-explainer", "/problemoftheday", "Kaggle", "YouTube", "Book", "Manual", "Coursera"] },
+        "Status": { "type": "select", "options": ["Not Started", "In Progress", "Completed", "Blocked"] },
+        "Hours Logged": { "type": "number" },
+        "Day 5 Goal": { "type": "rich_text" }
+      },
+      "relations": [
+        { "property": "Related Textbook", "target": "textbooks", "type": "single" },
+        { "property": "Related Course", "target": "courses", "type": "single" }
+      ]
+    }
+  },
+
+  "creation_order": [
+    "learning_layers", "courses", "lessons", "skills_master_library",
+    "lesson_skill_bridge", "practical_projects_software", "practical_projects_hardware",
+    "learning_log", "lesson_resources", "textbooks", "textbook_resources",
+    "chaos_hour", "bootcamp"
+  ],
+
+  "relation_build_note": "setup_notion.py's Pass 2 should only PATCH relations whose 'type' is 'dual', 'dual_self', or 'single' — entries marked 'auto_created' are informational only (they document what Notion will generate as the reciprocal) and must NOT be independently created, or Notion will error / produce duplicate columns.",
+
+  "dashboard": {
+    "page_title": "Learning OS",
+    "child_pages": ["Master Learning Roadmap"],
+    "blocks": [
+      { "type": "callout", "text": "Learning Loop", "icon": "🧠" },
+      { "type": "divider" },
+      { "type": "quote", "text": "\"The more I learn, the more I realize how much I don't know.\" — Einstein. Guy had a point." },
+      { "type": "paragraph", "text": "This is a fully relational Learning Operating System — for tracking skill mastery across layers, courses, lessons, projects, and daily log entries." },
+      { "type": "divider" },
+      { "type": "heading_2", "text": "How This Works" },
+      { "type": "callout", "text": "The Core Loop: Layer → Course → Lesson → Skills (via Bridge) → Practical Projects → Daily Log. Everything is connected. Nothing lives in a silo." },
+      { "type": "divider" },
+      { "type": "heading_2", "text": "📂 The Databases" },
+      { "type": "child_databases", "note": "one child_database block per database in creation_order, appended after all databases + relations exist" },
+      { "type": "divider" },
+      { "type": "heading_2", "text": "🔗 Relationship Map" },
+      {
+        "type": "code",
+        "language": "plain text",
+        "text": "🗂️ Learning Layers (1)\n ├── 📚 Courses (many)\n │    └── 📝 Lessons (many)\n │         └── 🔗 Bridge → 🧠 Skills\n ├── 💻 Software Projects (many) → 🧠 Skills\n └── 🔧 Hardware Projects (many) → 🧠 Skills\n\n🧠 Skills Master Library\n ↔ Lessons, Courses, Layers, Hardware Projects\n\n📓 Learning Log\n → Layer + Course + Lesson + Software + Hardware + Skills"
+      },
+      { "type": "heading_2", "text": "✍️ Workflow (How to Actually Use This)" },
+      {
+        "type": "numbered_list",
+        "items": [
+          "Add a Course in Courses, link it to the Layer",
+          "Create a Layer in Learning Layers (e.g. Layer 1 — Building with LLMs & Agents)",
+          "Add Lessons inside that Course, link to Layer too",
+          "Add Skills to the Skills Master Library with a Skill Level",
+          "Create Bridge entries to track required vs. current mastery per lesson"
+        ]
+      },
+      { "type": "heading_2", "text": "⚠️ Things Worth Knowing" },
+      {
+        "type": "bulleted_list",
+        "items": [
+          "Sub-skills on the Skills Library is a relation, not a text field — use it for genuine skill hierarchies.",
+          "The Bridge Table is where theory meets reality — required mastery vs. current mastery tells you exactly where the gap is.",
+          "The Learning Log links out to Layer/Course/Lesson/Software/Hardware/Skills but none of those databases link back — the Log is a one-way daily record, not a two-way lookup.",
+          "Rabbit Holes live in two places: Lessons (notes on what derailed you) and the Log (checkbox + description). Both matter."
+        ]
+      }
+    ]
+  }
+}

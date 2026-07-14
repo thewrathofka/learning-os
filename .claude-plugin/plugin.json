@@ -1,0 +1,12 @@
+{
+  "name": "learning-os",
+  "description": "Six Claude Code tutor commands (concepts, code, math, hardware, daily problems, code explanation) backed by NotebookLM session memory and a 13-database Notion workspace, plus a setup command that builds that Notion workspace from scratch via the API.",
+  "version": "0.1.0",
+  "author": {
+    "name": "Katarina Misovic",
+    "email": "kkmisovic@gmail.com"
+  },
+  "license": "MIT",
+  "keywords": ["learning", "tutor", "notebooklm", "notion", "education", "study"],
+  "repository": "https://github.com/thewrathofka/learning-os"
+}
