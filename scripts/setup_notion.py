@@ -1,19 +1,21 @@
 #!/usr/bin/env python3
 """
-Builds the full Learning OS Notion workspace (13 databases + relations + dashboard page)
+Builds the full Learning OS Notion workspace (14 databases + relations + dashboard page)
 from scratch via the Notion API, driven by notion_schema.json.
 
-Two-pass design, required because Notion won't let you point a relation property at a
-database that doesn't exist yet, and several of these 13 databases reference each other
+Pass design, required because Notion won't let you point a relation property at a
+database that doesn't exist yet, and several of these 14 databases reference each other
 circularly (Courses <-> Lessons <-> Skills <-> Layers):
 
   Pass 0 - verify the given parent page is actually shared with the integration
-  Pass 1 - create all databases with non-relation properties only
+  Pass 1 - build the dashboard page in one linear walk over its block list, creating each
+           database (including Master Project Pipeline and the "Master Learning Roadmap"
+           child page) exactly where its position marker sits, so page content order
+           matches creation order (see pass1_build_dashboard). Non-relation properties only.
   Pass 2 - PATCH in every relation property now that all database IDs are known
   Pass 2.5 - verify each dual-relation's auto-created reciprocal property name matches
              the schema; rename it if Notion's auto-naming didn't match (unconfirmed
              from docs whether synced_property_name is honored on every account/version)
-  Pass 3 - build the dashboard page + "Master Learning Roadmap" child page
   Pass 4 - write every created ID into ~/.learning-os/config.env
 
 Resumable: progress is checkpointed to a JSON file after every database/pass, so a
@@ -132,7 +134,27 @@ def pass0_verify_parent(token, parent_page_id):
     print("  OK - parent page is accessible.")
 
 
-def pass1_create_databases(token, schema, progress, progress_path, databases_parent_id, only=None):
+def create_one_database(token, schema, progress, db_key, databases_parent_id):
+    """Creates a single database (non-relation properties only) as a child of
+    databases_parent_id. is_inline renders it as an embedded child_database block in the
+    page rather than a standalone subpage link — matches the original layout."""
+    db_def = schema["databases"][db_key]
+    properties = {name: build_property_config(p) for name, p in db_def["properties"].items()}
+    body = {
+        "parent": {"type": "page_id", "page_id": databases_parent_id},
+        "title": [{"type": "text", "text": {"content": db_def["title"]}}],
+        "properties": properties,
+        "is_inline": True,
+    }
+    result = notion_request(token, "POST", "/databases", body)
+    progress["database_ids"][db_key] = result["id"]
+    print(f"  {db_key}: created ({result['id']})")
+
+
+def pass1_create_databases_flat(token, schema, progress, progress_path, databases_parent_id, only=None):
+    """Used only for --only smoke-testing or --skip-dashboard runs, where databases are
+    created directly under the given parent page rather than positioned within dashboard
+    content (see pass1_build_dashboard for the real, positioned build)."""
     print("Pass 1: creating databases (non-relation properties only)...")
     for db_key in schema["creation_order"]:
         if only and db_key not in only:
@@ -140,19 +162,8 @@ def pass1_create_databases(token, schema, progress, progress_path, databases_par
         if db_key in progress["database_ids"]:
             print(f"  {db_key}: already created ({progress['database_ids'][db_key]}), skipping")
             continue
-        db_def = schema["databases"][db_key]
-        properties = {name: build_property_config(p) for name, p in db_def["properties"].items()}
-        body = {
-            "parent": {"type": "page_id", "page_id": databases_parent_id},
-            "title": [{"type": "text", "text": {"content": db_def["title"]}}],
-            "properties": properties,
-            "is_inline": True,  # renders as an embedded child_database block in the page,
-                                 # not a standalone subpage link — matches the original layout
-        }
-        result = notion_request(token, "POST", "/databases", body)
-        progress["database_ids"][db_key] = result["id"]
+        create_one_database(token, schema, progress, db_key, databases_parent_id)
         save_progress(progress_path, progress)
-        print(f"  {db_key}: created ({result['id']})")
 
 
 def pass2_patch_relations(token, schema, progress, progress_path, only=None):
@@ -254,10 +265,10 @@ def build_block(b):
     block can't be created directly via blocks.children.append; it only appears
     automatically when a database is created with this page as its parent."""
     if b["type"] == "callout":
-        return {"object": "block", "type": "callout", "callout": {
-            "rich_text": [{"type": "text", "text": {"content": b["text"]}}],
-            "icon": {"type": "emoji", "emoji": b.get("icon", "💡")},
-        }}
+        callout_obj = {"rich_text": [{"type": "text", "text": {"content": b["text"]}}]}
+        if "icon" in b:
+            callout_obj["icon"] = {"type": "emoji", "emoji": b["icon"]}
+        return {"object": "block", "type": "callout", "callout": callout_obj}
     if b["type"] == "divider":
         return {"object": "block", "type": "divider", "divider": {}}
     if b["type"] == "quote":
@@ -282,11 +293,16 @@ def build_block(b):
             "language": b.get("language", "plain text"),
         }}
     if b["type"] == "table":
+        # Unlike callouts, Notion requires a table's rows as "children" INLINE in the
+        # same creation call — a follow-up children-append call is rejected with
+        # "table.children should be defined". So rows go in here, not as a nested
+        # 'children' schema key handled later by append_blocks_recursive.
         width = len(b["rows"][0]) if b["rows"] else 2
         return {"object": "block", "type": "table", "table": {
             "table_width": width,
             "has_column_header": b.get("has_column_header", True),
             "has_row_header": False,
+            "children": build_table_row_blocks(b["rows"]),
         }}
     raise ValueError(f"Unhandled dashboard block type: {b['type']}")
 
@@ -301,11 +317,12 @@ def build_table_row_blocks(rows):
 
 
 def append_blocks_recursive(token, parent_id, schema_blocks):
-    """Appends schema_blocks under parent_id, then recursively appends any nested content
-    a block declares — a 'children' list (e.g. the numbered list nested inside the
-    "Learning Loop" callout) or a 'table' block's 'rows'. Nested content has to be a
-    follow-up call per Notion's API, since block-append only returns IDs for the blocks
-    you just created, not for children you'd have liked to nest inline."""
+    """Appends schema_blocks under parent_id, then recursively appends any nested 'children'
+    a block declares (e.g. the numbered list nested inside the "Learning Loop" callout).
+    That has to be a follow-up call per Notion's API, since block-append only returns IDs
+    for the blocks you just created. Table rows are the one exception — Notion requires
+    those inline in the same creation call, so build_block already embeds them; there's
+    nothing left to do for tables here."""
     flat_blocks = []
     schema_refs = []  # parallel to flat_blocks; None for expanded list items (no further nesting)
     for b in schema_blocks:
@@ -332,104 +349,90 @@ def append_blocks_recursive(token, parent_id, schema_blocks):
         for created, ref in zip(result["results"], chunk_refs):
             if not ref:
                 continue
-            if ref.get("children"):
+            if ref.get("children") and ref["type"] != "table":
                 append_blocks_recursive(token, created["id"], ref["children"])
-            if ref["type"] == "table" and ref.get("rows"):
-                notion_request(token, "PATCH", f"/blocks/{created['id']}/children", {
-                    "children": build_table_row_blocks(ref["rows"])
-                })
 
 
-def build_blocks(schema_blocks):
-    """Expands schema block declarations (including list types, which fan out to one
-    Notion block per item) into a flat list of Notion API block objects. Does NOT handle
-    nested 'children'/'table rows' — use append_blocks_recursive for that."""
-    blocks = []
-    for b in schema_blocks:
-        if b["type"] == "numbered_list":
-            for item in b["items"]:
-                blocks.append({"object": "block", "type": "numbered_list_item", "numbered_list_item": {
-                    "rich_text": [{"type": "text", "text": {"content": item}}]
-                }})
-        elif b["type"] == "bulleted_list":
-            for item in b["items"]:
-                blocks.append({"object": "block", "type": "bulleted_list_item", "bulleted_list_item": {
-                    "rich_text": [{"type": "text", "text": {"content": item}}]
-                }})
-        else:
-            blocks.append(build_block(b))
-    return blocks
+def pass1_build_dashboard(token, schema, progress, progress_path):
+    """Creates the dashboard page, then walks dashboard.blocks in a single linear pass,
+    appending normal content as a buffer and flushing it whenever a position marker is
+    reached. Content order equals creation order by construction, so a database created at
+    a 'child_database_single' marker (e.g. Master Project Pipeline) lands exactly where its
+    heading says it should, instead of needing a separate workaround.
 
+    Three markers, handled inline as they're reached:
+      - child_pages_marker: create + populate child page(s) (e.g. Master Learning Roadmap)
+      - child_database_single: create one specific named database here
+      - child_databases: create every remaining not-yet-created database from creation_order
 
-def append_blocks(token, page_id, blocks):
-    # /v1/blocks/children append accepts at most 100 blocks per call.
-    for i in range(0, len(blocks), 100):
-        notion_request(token, "PATCH", f"/blocks/{page_id}/children", {"children": blocks[i:i + 100]})
-
-
-def split_dashboard_blocks(dash):
-    """Splits the schema's dashboard.blocks around two position markers:
-    'child_pages_marker' (where the child pages, e.g. Master Learning Roadmap, get linked
-    in — matches their real position near the top of the original page, not the end) and
-    'child_databases' (where the 13 databases render once created). Returns three segments:
-    blocks before the child-pages marker, blocks between the two markers, and blocks after
-    the databases marker."""
-    cp_index = next(i for i, b in enumerate(dash["blocks"]) if b["type"] == "child_pages_marker")
-    db_index = next(i for i, b in enumerate(dash["blocks"]) if b["type"] == "child_databases")
-    return dash["blocks"][:cp_index], dash["blocks"][cp_index + 1:db_index], dash["blocks"][db_index + 1:]
-
-
-def pass1a_dashboard_shell(token, schema, progress, progress_path):
-    """Creates the (empty) dashboard page, appends the opening content, creates the child
-    page(s) (e.g. Master Learning Roadmap) at THIS point so they land in the same position
-    as the original page (near the top, not appended at the very end), then appends the
-    rest of the pre-database content. Databases get created as this page's children right
-    after (Pass 1b), so they render as child_database blocks in position."""
-    if progress.get("dashboard_page_id"):
-        print(f"Pass 1a: dashboard page already created ({progress['dashboard_page_id']}), skipping")
-        return progress["dashboard_page_id"]
-    print("Pass 1a: creating the dashboard page shell...")
+    Resumable via a cursor index into dashboard.blocks, checkpointed after each block/marker,
+    so an interrupted or rate-limited run picks back up without recreating anything."""
     dash = schema["dashboard"]
-    page = notion_request(token, "POST", "/pages", {
-        "parent": {"type": "page_id", "page_id": progress["parent_page_id"]},
-        "properties": {"title": [{"type": "text", "text": {"content": dash["page_title"]}}]},
-    })
-    dashboard_id = page["id"]
-    opening_blocks, mid_blocks, _ = split_dashboard_blocks(dash)
-    append_blocks_recursive(token, dashboard_id, opening_blocks)
-
-    for child in dash.get("child_pages", []):
-        child_page = notion_request(token, "POST", "/pages", {
-            "parent": {"type": "page_id", "page_id": dashboard_id},
-            "properties": {"title": [{"type": "text", "text": {"content": child["title"]}}]},
+    if not progress.get("dashboard_page_id"):
+        print("Pass 1: creating the dashboard page...")
+        page = notion_request(token, "POST", "/pages", {
+            "parent": {"type": "page_id", "page_id": progress["parent_page_id"]},
+            "properties": {"title": [{"type": "text", "text": {"content": dash["page_title"]}}]},
         })
-        if child.get("blocks"):
-            append_blocks_recursive(token, child_page["id"], child["blocks"])
-
-    append_blocks_recursive(token, dashboard_id, mid_blocks)
-    progress["dashboard_page_id"] = dashboard_id
-    save_progress(progress_path, progress)
-    print(f"  dashboard page created: {dashboard_id}")
-    return dashboard_id
-
-
-def pass3_finish_dashboard(token, schema, progress, progress_path):
-    """Appends the remainder of the dashboard content (everything after the databases
-    section). Runs after all 13 databases already exist as children of the dashboard
-    page, so they show up as child_database blocks right where the schema's
-    'child_databases' marker sits."""
-    if progress.get("dashboard_tail_done"):
-        print("Pass 3: dashboard tail already appended, skipping")
-        return
-    print("Pass 3: finishing the dashboard page...")
-    dash = schema["dashboard"]
+        progress["dashboard_page_id"] = page["id"]
+        progress["dashboard_cursor"] = 0
+        save_progress(progress_path, progress)
     dashboard_id = progress["dashboard_page_id"]
-    _, _, post_blocks = split_dashboard_blocks(dash)
-    append_blocks_recursive(token, dashboard_id, post_blocks)
+    cursor = progress.get("dashboard_cursor", 0)
 
-    progress["dashboard_tail_done"] = True
-    save_progress(progress_path, progress)
-    print("  dashboard finished.")
+    buffer = []
+
+    def flush(checkpoint_index):
+        """Sends whatever's buffered, THEN advances the saved cursor. The order matters:
+        a single blocks.children.append call is all-or-nothing (confirmed empirically —
+        a batch that fails validation partway creates none of its blocks), so it's only
+        safe to mark these blocks as done once the call actually succeeds. Advancing the
+        cursor first (checkpointing "buffered" as if it were "sent") was the bug that let
+        an earlier crash mid-flush silently drop everything sitting in the buffer at the
+        time, since resume would skip past them without ever re-sending them."""
+        if buffer:
+            append_blocks_recursive(token, dashboard_id, buffer)
+            buffer.clear()
+        progress["dashboard_cursor"] = checkpoint_index
+        save_progress(progress_path, progress)
+
+    print("Pass 1: building dashboard content and databases in page order...")
+    for i, b in enumerate(dash["blocks"]):
+        if i < cursor:
+            continue
+        if b["type"] == "child_pages_marker":
+            flush(i)
+            if not progress.get("child_pages_done"):
+                for child in dash.get("child_pages", []):
+                    child_page = notion_request(token, "POST", "/pages", {
+                        "parent": {"type": "page_id", "page_id": dashboard_id},
+                        "properties": {"title": [{"type": "text", "text": {"content": child["title"]}}]},
+                    })
+                    if child.get("blocks"):
+                        append_blocks_recursive(token, child_page["id"], child["blocks"])
+                progress["child_pages_done"] = True
+            progress["dashboard_cursor"] = i + 1
+            save_progress(progress_path, progress)
+        elif b["type"] == "child_database_single":
+            flush(i)
+            if b["database"] not in progress["database_ids"]:
+                create_one_database(token, schema, progress, b["database"], dashboard_id)
+            progress["dashboard_cursor"] = i + 1
+            save_progress(progress_path, progress)
+        elif b["type"] == "child_databases":
+            flush(i)
+            for db_key in schema["creation_order"]:
+                if db_key not in progress["database_ids"]:
+                    create_one_database(token, schema, progress, db_key, dashboard_id)
+            progress["dashboard_cursor"] = i + 1
+            save_progress(progress_path, progress)
+        else:
+            buffer.append(b)
+            # Cursor deliberately NOT advanced here — only once flush() actually sends this block.
+
+    flush(len(dash["blocks"]))
+    print(f"  dashboard built: {dashboard_id}")
+    return dashboard_id
 
 
 def pass4_write_config(schema, progress, config_path):
@@ -472,7 +475,8 @@ def main():
                          help="Comma-separated list of database keys to build, for smoke-testing "
                               "(e.g. --only learning_layers,skills_master_library). Omit for the full run.")
     parser.add_argument("--skip-dashboard", action="store_true",
-                         help="Skip Pass 3 (dashboard page) — useful when smoke-testing with --only")
+                         help="Skip the dashboard page and create databases flat under --parent-page-id "
+                              "instead — useful when smoke-testing with --only")
     args = parser.parse_args()
 
     if not args.token:
@@ -493,18 +497,14 @@ def main():
     pass0_verify_parent(args.token, parent_page_id)
 
     if building_dashboard:
-        # The dashboard page must exist FIRST so the 13 databases can be created as its
-        # children — that's the only way Notion renders them as child_database blocks
-        # inline in the dashboard content, in creation order.
-        databases_parent_id = pass1a_dashboard_shell(args.token, schema, progress, args.progress_path)
+        # Single linear pass builds the dashboard page AND creates all databases in their
+        # correct page-content position (see pass1_build_dashboard's docstring).
+        pass1_build_dashboard(args.token, schema, progress, args.progress_path)
     else:
-        databases_parent_id = parent_page_id
+        pass1_create_databases_flat(args.token, schema, progress, args.progress_path, parent_page_id, only=only)
 
-    pass1_create_databases(args.token, schema, progress, args.progress_path, databases_parent_id, only=only)
     pass2_patch_relations(args.token, schema, progress, args.progress_path, only=only)
     pass2_5_verify_reciprocals(args.token, schema, progress, args.progress_path, only=only)
-    if building_dashboard:
-        pass3_finish_dashboard(args.token, schema, progress, args.progress_path)
     pass4_write_config(schema, progress, args.config_path)
 
     print("\nDone. Database IDs (and dashboard page ID, if built) written to", args.config_path)

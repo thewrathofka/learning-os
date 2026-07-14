@@ -2,6 +2,20 @@
   "_comment": "Single source of truth for the Learning OS Notion template. Consumed by setup_notion.py to build the workspace, and mirrored in docs/NOTION_SCHEMA.md. Every relation's dual/single classification below was verified against the live personal template by cross-checking each database's full property list against every other's — a relation is only 'dual' if the target database independently shows a matching reciprocal property; otherwise it's a one-directional 'single' relation. Do not assume dual by default.",
   "notion_version": "2022-06-28",
   "databases": {
+    "master_project_pipeline": {
+      "title": "Master Project Pipeline",
+      "config_var": "NOTION_DB_MASTER_PROJECT_PIPELINE",
+      "properties": {
+        "Project Name": { "type": "title" },
+        "Description": { "type": "rich_text" },
+        "Status": { "type": "select", "options": ["Not Started", "In Progress", "Complete", "On Hold"] },
+        "Start Date": { "type": "date" },
+        "Target Date": { "type": "date" },
+        "Scope": { "type": "select", "options": ["Dashboard Only", "Learning OS Only", "Both"] }
+      },
+      "relations": [],
+      "_comment": "Self-contained by design — the original had two relations (one to Practical Projects - Software, one to a 'Projects' database in a separate life-Dashboard system outside Learning OS). Dropped both rather than half-wire a relation to a database that doesn't exist in a fresh workspace. Status is built as 'select' rather than Notion's native 'status' property type (which the real page uses) — the status type has a more complex creation shape that isn't proven to work reliably via this API version, while select is already validated; functionally near-identical for the user, just without Notion's built-in three-category grouping/coloring."
+    },
     "learning_layers": {
       "title": "Learning Layers",
       "config_var": "NOTION_DB_LEARNING_LAYERS",
@@ -289,6 +303,7 @@
   },
 
   "creation_order": [
+    "master_project_pipeline",
     "learning_layers", "courses", "lessons", "skills_master_library",
     "lesson_skill_bridge", "practical_projects_software", "practical_projects_hardware",
     "learning_log", "lesson_resources", "textbooks", "textbook_resources",
@@ -330,7 +345,7 @@
           { "type": "paragraph", "text": "AI Play: Understanding how models work, fine-tuning concepts, production AI systems" },
           { "type": "paragraph", "text": "Hardware Play: Raspberry Pi advanced projects, connecting hardware to AI software layer" },
           { "type": "heading_3", "text": "Layer 4 — Root Knowledge" },
-          { "type": "paragraph", "text": "The foundation everything else sits on. Most people never come here — it separates engineers from scientists." },
+          { "type": "paragraph", "text": "The foundation everything else sits on. It separates engineers from scientists." },
           { "type": "paragraph", "text": "Math (linear algebra, probability, calculus), Electrical Engineering, Advanced Computer Science, genuine AI understanding at the model level." },
           { "type": "paragraph", "text": "AI Play: How neural networks actually work, training from scratch, AI research literacy" },
           { "type": "paragraph", "text": "Hardware Play: Electronics fundamentals, circuit design, custom hardware" }
@@ -339,7 +354,7 @@
     ],
     "blocks": [
       {
-        "type": "callout", "text": "Learning Loop", "icon": "🔄",
+        "type": "callout", "text": "Learning Loop",
         "children": [
           { "type": "numbered_list", "items": [
             "Build stuff",
@@ -371,16 +386,19 @@
       },
       { "type": "paragraph", "text": "Start in Learning Layers. Create your layer first. Everything else hangs off it." },
       { "type": "divider" },
-      { "type": "heading_2", "text": "📂 The Databases" },
-      { "type": "child_databases", "note": "one child_database block per database in creation_order, appended after all databases + relations exist" },
+      { "type": "heading_2", "text": "Master Project Pipeline" },
+      { "type": "child_database_single", "database": "master_project_pipeline" },
       { "type": "divider" },
-      { "type": "heading_2", "text": "🔗 Relationship Map" },
+      { "type": "heading_2", "text": "The Databases" },
+      { "type": "child_databases", "note": "one child_database block per remaining (not-yet-created) database in creation_order, appended after all databases + relations exist" },
+      { "type": "divider" },
+      { "type": "heading_2", "text": "Relationship Map" },
       {
         "type": "code",
         "language": "plain text",
-        "text": "🗂️ Learning Layers (1)\n ├── 📚 Courses (many)\n │    └── 📝 Lessons (many)\n │         └── 🔗 Bridge → 🧠 Skills\n ├── 💻 Software Projects (many) → 🧠 Skills\n └── 🔧 Hardware Projects (many) → 🧠 Skills\n\n🧠 Skills Master Library\n ↔ Lessons, Courses, Layers, Hardware Projects\n\n📓 Learning Log\n → Layer + Course + Lesson + Software + Hardware + Skills"
+        "text": "Learning Layers (1)\n ├── Courses (many)\n │    └── Lessons (many)\n │         └── Bridge → Skills\n ├── Software Projects (many) → Skills\n └── Hardware Projects (many) → Skills\n\nSkills Master Library\n ↔ Lessons, Courses, Layers, Hardware Projects\n\nLearning Log\n → Layer + Course + Lesson + Software + Hardware + Skills"
       },
-      { "type": "heading_2", "text": "✍️ Workflow (How to Actually Use This)" },
+      { "type": "heading_2", "text": "Workflow (How to Actually Use This)" },
       {
         "type": "numbered_list",
         "items": [
@@ -391,7 +409,7 @@
           "Create Bridge entries to track required vs. current mastery per lesson"
         ]
       },
-      { "type": "heading_2", "text": "⚠️ Things Worth Knowing" },
+      { "type": "heading_2", "text": "Things Worth Knowing" },
       {
         "type": "bulleted_list",
         "items": [

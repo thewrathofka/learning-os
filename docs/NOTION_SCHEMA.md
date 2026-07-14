@@ -8,6 +8,21 @@ Notion API version: `2022-06-28` (see the risk note in `scripts/setup_notion.py`
 
 ## Databases (in creation order)
 
+### Master Project Pipeline
+
+Config variable: `NOTION_DB_MASTER_PROJECT_PIPELINE`
+
+| Property | Type | Notes |
+|---|---|---|
+| Project Name | title |  |
+| Description | rich_text |  |
+| Status | select | Not Started, In Progress, Complete, On Hold |
+| Start Date | date |  |
+| Target Date | date |  |
+| Scope | select | Dashboard Only, Learning OS Only, Both |
+
+*Self-contained by design — the original had two relations (one to Practical Projects - Software, one to a 'Projects' database in a separate life-Dashboard system outside Learning OS). Dropped both rather than half-wire a relation to a database that doesn't exist in a fresh workspace. Status is built as 'select' rather than Notion's native 'status' property type (which the real page uses) — the status type has a more complex creation shape that isn't proven to work reliably via this API version, while select is already validated; functionally near-identical for the user, just without Notion's built-in three-category grouping/coloring.*
+
 ### Learning Layers
 
 Config variable: `NOTION_DB_LEARNING_LAYERS`
@@ -232,7 +247,7 @@ Title: **Learning OS**, with child page(s): Master Learning Roadmap.
 
 ### Dashboard page content (verbatim)
 
-> **🔄 Learning Loop**
+> **Learning Loop**
 > 1. Build stuff
 > 2. Fall into rabbit holes of splendid nescience
 > 3. Learn what you need
@@ -251,7 +266,7 @@ This is Kali's Learning Operating System — a fully relational system for track
 
 #### How This Works
 
-> **💡 The Core Loop: Layer → Course → Lesson → Skills (via Bridge) → Practical Projects → Daily Log. Everything is connected. Nothing lives in a silo.**
+> **The Core Loop: Layer → Course → Lesson → Skills (via Bridge) → Practical Projects → Daily Log. Everything is connected. Nothing lives in a silo.**
 
 ##### The Layers (Top Level)
 
@@ -268,30 +283,36 @@ Start in Learning Layers. Create your layer first. Everything else hangs off it.
 
 ---
 
-#### 📂 The Databases
+#### Master Project Pipeline
 
-*(all 13 databases embedded here, in creation order)*
+*(database embedded here: Master Project Pipeline)*
 
 ---
 
-#### 🔗 Relationship Map
+#### The Databases
+
+*(all remaining databases embedded here, in creation order)*
+
+---
+
+#### Relationship Map
 
 ```
-🗂️ Learning Layers (1)
- ├── 📚 Courses (many)
- │    └── 📝 Lessons (many)
- │         └── 🔗 Bridge → 🧠 Skills
- ├── 💻 Software Projects (many) → 🧠 Skills
- └── 🔧 Hardware Projects (many) → 🧠 Skills
+Learning Layers (1)
+ ├── Courses (many)
+ │    └── Lessons (many)
+ │         └── Bridge → Skills
+ ├── Software Projects (many) → Skills
+ └── Hardware Projects (many) → Skills
 
-🧠 Skills Master Library
+Skills Master Library
  ↔ Lessons, Courses, Layers, Hardware Projects
 
-📓 Learning Log
+Learning Log
  → Layer + Course + Lesson + Software + Hardware + Skills
 ```
 
-#### ✍️ Workflow (How to Actually Use This)
+#### Workflow (How to Actually Use This)
 
 1. Add a Course in Courses, link it to the Layer
 2. Create a Layer in Learning Layers (e.g. Layer 1 — Building with LLMs & Agents)
@@ -299,7 +320,7 @@ Start in Learning Layers. Create your layer first. Everything else hangs off it.
 4. Add Skills to the Skills Master Library with a Skill Level
 5. Create Bridge entries to track required vs. current mastery per lesson
 
-#### ⚠️ Things Worth Knowing
+#### Things Worth Knowing
 
 - Sub-skills on the Skills Library is a relation, not a text field — use it for genuine skill hierarchies.
 - The Bridge Table is where theory meets reality — required mastery vs. current mastery tells you exactly where the gap is.
@@ -357,7 +378,7 @@ Hardware Play: Raspberry Pi advanced projects, connecting hardware to AI softwar
 
 ##### Layer 4 — Root Knowledge
 
-The foundation everything else sits on. Most people never come here — it separates engineers from scientists.
+The foundation everything else sits on. It separates engineers from scientists.
 
 Math (linear algebra, probability, calculus), Electrical Engineering, Advanced Computer Science, genuine AI understanding at the model level.
 
