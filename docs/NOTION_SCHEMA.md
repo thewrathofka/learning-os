@@ -233,6 +233,11 @@ Title: **Learning OS**, with child page(s): Master Learning Roadmap.
 ### Dashboard page content (verbatim)
 
 > **🔄 Learning Loop**
+> 1. Build stuff
+> 2. Fall into rabbit holes of splendid nescience
+> 3. Learn what you need
+> 4. Build more, build better
+
 
 ---
 
@@ -245,6 +250,19 @@ This is Kali's Learning Operating System — a fully relational system for track
 #### How This Works
 
 > **💡 The Core Loop: Layer → Course → Lesson → Skills (via Bridge) → Practical Projects → Daily Log. Everything is connected. Nothing lives in a silo.**
+
+##### The Layers (Top Level)
+
+Four depth levels. Each is a project that owns everything beneath it.
+
+| Layer | Meaning |
+|---|---|
+| Layer 1 | Build |
+| Layer 2 | Build Better |
+| Layer 3 | Understand Deeper |
+| Layer 4 | Root Knowledge |
+
+Start in Learning Layers. Create your layer first. Everything else hangs off it.
 
 ---
 

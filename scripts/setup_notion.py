@@ -281,12 +281,69 @@ def build_block(b):
             "rich_text": [{"type": "text", "text": {"content": b["text"]}}],
             "language": b.get("language", "plain text"),
         }}
+    if b["type"] == "table":
+        width = len(b["rows"][0]) if b["rows"] else 2
+        return {"object": "block", "type": "table", "table": {
+            "table_width": width,
+            "has_column_header": b.get("has_column_header", True),
+            "has_row_header": False,
+        }}
     raise ValueError(f"Unhandled dashboard block type: {b['type']}")
+
+
+def build_table_row_blocks(rows):
+    return [
+        {"object": "block", "type": "table_row", "table_row": {
+            "cells": [[{"type": "text", "text": {"content": cell}}] for cell in row]
+        }}
+        for row in rows
+    ]
+
+
+def append_blocks_recursive(token, parent_id, schema_blocks):
+    """Appends schema_blocks under parent_id, then recursively appends any nested content
+    a block declares — a 'children' list (e.g. the numbered list nested inside the
+    "Learning Loop" callout) or a 'table' block's 'rows'. Nested content has to be a
+    follow-up call per Notion's API, since block-append only returns IDs for the blocks
+    you just created, not for children you'd have liked to nest inline."""
+    flat_blocks = []
+    schema_refs = []  # parallel to flat_blocks; None for expanded list items (no further nesting)
+    for b in schema_blocks:
+        if b["type"] == "numbered_list":
+            for item in b["items"]:
+                flat_blocks.append({"object": "block", "type": "numbered_list_item", "numbered_list_item": {
+                    "rich_text": [{"type": "text", "text": {"content": item}}]
+                }})
+                schema_refs.append(None)
+        elif b["type"] == "bulleted_list":
+            for item in b["items"]:
+                flat_blocks.append({"object": "block", "type": "bulleted_list_item", "bulleted_list_item": {
+                    "rich_text": [{"type": "text", "text": {"content": item}}]
+                }})
+                schema_refs.append(None)
+        else:
+            flat_blocks.append(build_block(b))
+            schema_refs.append(b)
+
+    for i in range(0, len(flat_blocks), 100):
+        chunk_blocks = flat_blocks[i:i + 100]
+        chunk_refs = schema_refs[i:i + 100]
+        result = notion_request(token, "PATCH", f"/blocks/{parent_id}/children", {"children": chunk_blocks})
+        for created, ref in zip(result["results"], chunk_refs):
+            if not ref:
+                continue
+            if ref.get("children"):
+                append_blocks_recursive(token, created["id"], ref["children"])
+            if ref["type"] == "table" and ref.get("rows"):
+                notion_request(token, "PATCH", f"/blocks/{created['id']}/children", {
+                    "children": build_table_row_blocks(ref["rows"])
+                })
 
 
 def build_blocks(schema_blocks):
     """Expands schema block declarations (including list types, which fan out to one
-    Notion block per item) into a flat list of Notion API block objects."""
+    Notion block per item) into a flat list of Notion API block objects. Does NOT handle
+    nested 'children'/'table rows' — use append_blocks_recursive for that."""
     blocks = []
     for b in schema_blocks:
         if b["type"] == "numbered_list":
@@ -334,7 +391,7 @@ def pass1a_dashboard_shell(token, schema, progress, progress_path):
     })
     dashboard_id = page["id"]
     pre_blocks, _ = split_dashboard_blocks(dash)
-    append_blocks(token, dashboard_id, build_blocks(pre_blocks))
+    append_blocks_recursive(token, dashboard_id, pre_blocks)
     progress["dashboard_page_id"] = dashboard_id
     save_progress(progress_path, progress)
     print(f"  dashboard page created: {dashboard_id}")
@@ -353,16 +410,15 @@ def pass3_finish_dashboard(token, schema, progress, progress_path):
     dash = schema["dashboard"]
     dashboard_id = progress["dashboard_page_id"]
     _, post_blocks = split_dashboard_blocks(dash)
-    append_blocks(token, dashboard_id, build_blocks(post_blocks))
+    append_blocks_recursive(token, dashboard_id, post_blocks)
 
     for child in dash.get("child_pages", []):
         child_page = notion_request(token, "POST", "/pages", {
             "parent": {"type": "page_id", "page_id": dashboard_id},
             "properties": {"title": [{"type": "text", "text": {"content": child["title"]}}]},
         })
-        child_blocks = build_blocks(child.get("blocks", []))
-        if child_blocks:
-            append_blocks(token, child_page["id"], child_blocks)
+        if child.get("blocks"):
+            append_blocks_recursive(token, child_page["id"], child["blocks"])
 
     progress["dashboard_tail_done"] = True
     save_progress(progress_path, progress)
