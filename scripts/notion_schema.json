@@ -353,6 +353,7 @@
       { "type": "quote", "text": "\"The more I learn, the more I realize how much I don't know.\" — Einstein. Guy had a point." },
       { "type": "paragraph", "text": "This is Kali's Learning Operating System — a fully relational system for tracking skill mastery across layers, courses, lessons, projects, and daily log entries." },
       { "type": "divider" },
+      { "type": "child_pages_marker", "note": "child pages (Master Learning Roadmap) get linked in here — matches their real position near the top of the original page" },
       { "type": "heading_2", "text": "How This Works" },
       { "type": "callout", "text": "The Core Loop: Layer → Course → Lesson → Skills (via Bridge) → Practical Projects → Daily Log. Everything is connected. Nothing lives in a silo." },
       { "type": "heading_3", "text": "The Layers (Top Level)" },

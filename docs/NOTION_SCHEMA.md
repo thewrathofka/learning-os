@@ -247,6 +247,8 @@ This is Kali's Learning Operating System — a fully relational system for track
 
 ---
 
+*(child page link appears here: Master Learning Roadmap)*
+
 #### How This Works
 
 > **💡 The Core Loop: Layer → Course → Lesson → Skills (via Bridge) → Practical Projects → Daily Log. Everything is connected. Nothing lives in a silo.**

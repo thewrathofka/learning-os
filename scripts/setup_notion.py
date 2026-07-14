@@ -368,18 +368,23 @@ def append_blocks(token, page_id, blocks):
 
 
 def split_dashboard_blocks(dash):
-    """Splits the schema's dashboard.blocks around the 'child_databases' marker: blocks
-    before it get appended before the databases exist, blocks after it get appended once
-    the databases (created as this page's children) already show up as child_database
-    blocks in between."""
-    marker_index = next(i for i, b in enumerate(dash["blocks"]) if b["type"] == "child_databases")
-    return dash["blocks"][:marker_index], dash["blocks"][marker_index + 1:]
+    """Splits the schema's dashboard.blocks around two position markers:
+    'child_pages_marker' (where the child pages, e.g. Master Learning Roadmap, get linked
+    in — matches their real position near the top of the original page, not the end) and
+    'child_databases' (where the 13 databases render once created). Returns three segments:
+    blocks before the child-pages marker, blocks between the two markers, and blocks after
+    the databases marker."""
+    cp_index = next(i for i, b in enumerate(dash["blocks"]) if b["type"] == "child_pages_marker")
+    db_index = next(i for i, b in enumerate(dash["blocks"]) if b["type"] == "child_databases")
+    return dash["blocks"][:cp_index], dash["blocks"][cp_index + 1:db_index], dash["blocks"][db_index + 1:]
 
 
 def pass1a_dashboard_shell(token, schema, progress, progress_path):
-    """Creates the (empty) dashboard page and appends everything up to the databases
-    section, BEFORE any of the 13 databases exist. Databases must be created with this
-    page as their parent (Pass 1b) so they render as child_database blocks in position."""
+    """Creates the (empty) dashboard page, appends the opening content, creates the child
+    page(s) (e.g. Master Learning Roadmap) at THIS point so they land in the same position
+    as the original page (near the top, not appended at the very end), then appends the
+    rest of the pre-database content. Databases get created as this page's children right
+    after (Pass 1b), so they render as child_database blocks in position."""
     if progress.get("dashboard_page_id"):
         print(f"Pass 1a: dashboard page already created ({progress['dashboard_page_id']}), skipping")
         return progress["dashboard_page_id"]
@@ -390,27 +395,8 @@ def pass1a_dashboard_shell(token, schema, progress, progress_path):
         "properties": {"title": [{"type": "text", "text": {"content": dash["page_title"]}}]},
     })
     dashboard_id = page["id"]
-    pre_blocks, _ = split_dashboard_blocks(dash)
-    append_blocks_recursive(token, dashboard_id, pre_blocks)
-    progress["dashboard_page_id"] = dashboard_id
-    save_progress(progress_path, progress)
-    print(f"  dashboard page created: {dashboard_id}")
-    return dashboard_id
-
-
-def pass3_finish_dashboard(token, schema, progress, progress_path):
-    """Appends the remainder of the dashboard content (everything after the databases
-    section) and creates the 'Master Learning Roadmap' child page. Runs after all 13
-    databases already exist as children of the dashboard page, so they show up as
-    child_database blocks right where the schema's 'child_databases' marker sits."""
-    if progress.get("dashboard_tail_done"):
-        print("Pass 3: dashboard tail already appended, skipping")
-        return
-    print("Pass 3: finishing the dashboard page...")
-    dash = schema["dashboard"]
-    dashboard_id = progress["dashboard_page_id"]
-    _, post_blocks = split_dashboard_blocks(dash)
-    append_blocks_recursive(token, dashboard_id, post_blocks)
+    opening_blocks, mid_blocks, _ = split_dashboard_blocks(dash)
+    append_blocks_recursive(token, dashboard_id, opening_blocks)
 
     for child in dash.get("child_pages", []):
         child_page = notion_request(token, "POST", "/pages", {
@@ -419,6 +405,27 @@ def pass3_finish_dashboard(token, schema, progress, progress_path):
         })
         if child.get("blocks"):
             append_blocks_recursive(token, child_page["id"], child["blocks"])
+
+    append_blocks_recursive(token, dashboard_id, mid_blocks)
+    progress["dashboard_page_id"] = dashboard_id
+    save_progress(progress_path, progress)
+    print(f"  dashboard page created: {dashboard_id}")
+    return dashboard_id
+
+
+def pass3_finish_dashboard(token, schema, progress, progress_path):
+    """Appends the remainder of the dashboard content (everything after the databases
+    section). Runs after all 13 databases already exist as children of the dashboard
+    page, so they show up as child_database blocks right where the schema's
+    'child_databases' marker sits."""
+    if progress.get("dashboard_tail_done"):
+        print("Pass 3: dashboard tail already appended, skipping")
+        return
+    print("Pass 3: finishing the dashboard page...")
+    dash = schema["dashboard"]
+    dashboard_id = progress["dashboard_page_id"]
+    _, _, post_blocks = split_dashboard_blocks(dash)
+    append_blocks_recursive(token, dashboard_id, post_blocks)
 
     progress["dashboard_tail_done"] = True
     save_progress(progress_path, progress)
