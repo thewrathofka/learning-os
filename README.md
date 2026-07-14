@@ -22,6 +22,12 @@ current mastery per skill per lesson — that gap is the whole point of the syst
 See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for the full relationship map and
 [docs/NOTION_SCHEMA.md](docs/NOTION_SCHEMA.md) for every database's exact fields.
 
+`/learning-os-setup` also creates a "Master Learning Roadmap" child page under the dashboard,
+containing a general **Four Layers** framework (Use & Build → Build Better → Understand →
+Root Knowledge) for thinking about where a given Course or Lesson sits on the
+beginner-to-foundational spectrum — see the child-page section of
+[docs/NOTION_SCHEMA.md](docs/NOTION_SCHEMA.md) for the full text.
+
 ## Commands
 
 | Command | What it does |

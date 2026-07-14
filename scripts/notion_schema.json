@@ -299,7 +299,44 @@
 
   "dashboard": {
     "page_title": "Learning OS",
-    "child_pages": ["Master Learning Roadmap"],
+    "child_pages": [
+      {
+        "title": "Master Learning Roadmap",
+        "_comment": "Generic Four Layers framework only. The original personal roadmap this was extracted from also had a daily schedule, a course-enrollment stack, and an unrelated business project section — intentionally left out of the public template as too personal/specific to ship.",
+        "blocks": [
+          { "type": "quote", "text": "The pyramid doesn't care how fast you climb it — it cares whether you actually built something on each level." },
+          { "type": "divider" },
+          { "type": "heading_2", "text": "The Big Idea" },
+          { "type": "paragraph", "text": "This is a top-down learning pyramid built around immediate value. You start where you can build and earn from day one, then progressively go deeper toward foundational knowledge. Each layer makes you better at the layers above it. You never stop being a builder — you just become a more powerful one." },
+          { "type": "paragraph", "text": "Each layer has two parallel tracks (adapt these to your own domains — the example below is AI + hardware, but the pyramid works for any two tracks you want to build across):" },
+          { "type": "bulleted_list", "items": [
+            "AI Play — software, models, agents, automation",
+            "Hardware Play — Arduino → Raspberry Pi → bridging the two"
+          ] },
+          { "type": "divider" },
+          { "type": "heading_2", "text": "The Four Layers" },
+          { "type": "heading_3", "text": "Layer 1 — Use & Build with AI" },
+          { "type": "paragraph", "text": "Be a power user. Master AI tools, prompting, and simple automations. Build without needing to code. The goal is fluency across the entire AI tool ecosystem — knowing which tool to reach for, how to talk to it, and how to string tools together into real workflows." },
+          { "type": "paragraph", "text": "AI Play: Claude, ChatGPT, Gemini, Perplexity, NotebookLM, n8n, Make, Bolt.new, Lovable, v0.dev, Cursor, Replit, Midjourney, Flux, Runway, ElevenLabs, Suno, Descript, Apify, Relevance AI, Dust.tt" },
+          { "type": "paragraph", "text": "Hardware Play: Arduino starter projects — LED, sensors, servos, basic circuits" },
+          { "type": "heading_3", "text": "Layer 2 — Build Better" },
+          { "type": "paragraph", "text": "Add just enough technical skill to build real things. You become a builder, not just a user." },
+          { "type": "paragraph", "text": "JSON, APIs, web basics, Python lite, SQL, n8n advanced, GitHub, terminal, web scraping, Claude Code, basic JavaScript." },
+          { "type": "paragraph", "text": "AI Play: RAG systems, AI agents with tools, multi-agent workflows, skills and memory architecture" },
+          { "type": "paragraph", "text": "Hardware Play: Transition from Arduino to Raspberry Pi, first bridge projects between the two" },
+          { "type": "heading_3", "text": "Layer 3 — Understand" },
+          { "type": "paragraph", "text": "Go from building to understanding why things work. You can now reason about systems, not just use them." },
+          { "type": "paragraph", "text": "Computer Science fundamentals, Data Science, SQL advanced, Python properly, JavaScript properly, software architecture, data engineering." },
+          { "type": "paragraph", "text": "AI Play: Understanding how models work, fine-tuning concepts, production AI systems" },
+          { "type": "paragraph", "text": "Hardware Play: Raspberry Pi advanced projects, connecting hardware to AI software layer" },
+          { "type": "heading_3", "text": "Layer 4 — Root Knowledge" },
+          { "type": "paragraph", "text": "The foundation everything else sits on. Most people never come here — it separates engineers from scientists." },
+          { "type": "paragraph", "text": "Math (linear algebra, probability, calculus), Electrical Engineering, Advanced Computer Science, genuine AI understanding at the model level." },
+          { "type": "paragraph", "text": "AI Play: How neural networks actually work, training from scratch, AI research literacy" },
+          { "type": "paragraph", "text": "Hardware Play: Electronics fundamentals, circuit design, custom hardware" }
+        ]
+      }
+    ],
     "blocks": [
       { "type": "callout", "text": "Learning Loop", "icon": "🧠" },
       { "type": "divider" },

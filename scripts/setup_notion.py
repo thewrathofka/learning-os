@@ -272,6 +272,10 @@ def build_block(b):
         return {"object": "block", "type": "heading_2", "heading_2": {
             "rich_text": [{"type": "text", "text": {"content": b["text"]}}]
         }}
+    if b["type"] == "heading_3":
+        return {"object": "block", "type": "heading_3", "heading_3": {
+            "rich_text": [{"type": "text", "text": {"content": b["text"]}}]
+        }}
     if b["type"] == "code":
         return {"object": "block", "type": "code", "code": {
             "rich_text": [{"type": "text", "text": {"content": b["text"]}}],
@@ -351,11 +355,14 @@ def pass3_finish_dashboard(token, schema, progress, progress_path):
     _, post_blocks = split_dashboard_blocks(dash)
     append_blocks(token, dashboard_id, build_blocks(post_blocks))
 
-    for child_title in dash.get("child_pages", []):
-        notion_request(token, "POST", "/pages", {
+    for child in dash.get("child_pages", []):
+        child_page = notion_request(token, "POST", "/pages", {
             "parent": {"type": "page_id", "page_id": dashboard_id},
-            "properties": {"title": [{"type": "text", "text": {"content": child_title}}]},
+            "properties": {"title": [{"type": "text", "text": {"content": child["title"]}}]},
         })
+        child_blocks = build_blocks(child.get("blocks", []))
+        if child_blocks:
+            append_blocks(token, child_page["id"], child_blocks)
 
     progress["dashboard_tail_done"] = True
     save_progress(progress_path, progress)

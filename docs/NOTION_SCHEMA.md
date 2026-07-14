@@ -235,3 +235,62 @@ Content order: callout → quote → paragraph → "How This Works" heading + ca
 order) → "Relationship Map" heading + ASCII diagram → "Workflow" heading + numbered
 steps → "Things Worth Knowing" heading + bulleted notes.
 
+### Child page: Master Learning Roadmap
+
+*Generic Four Layers framework only. The original personal roadmap this was extracted from also had a daily schedule, a course-enrollment stack, and an unrelated business project section — intentionally left out of the public template as too personal/specific to ship.*
+
+> The pyramid doesn't care how fast you climb it — it cares whether you actually built something on each level.
+
+---
+
+#### The Big Idea
+
+This is a top-down learning pyramid built around immediate value. You start where you can build and earn from day one, then progressively go deeper toward foundational knowledge. Each layer makes you better at the layers above it. You never stop being a builder — you just become a more powerful one.
+
+Each layer has two parallel tracks (adapt these to your own domains — the example below is AI + hardware, but the pyramid works for any two tracks you want to build across):
+
+- AI Play — software, models, agents, automation
+- Hardware Play — Arduino → Raspberry Pi → bridging the two
+
+---
+
+#### The Four Layers
+
+##### Layer 1 — Use & Build with AI
+
+Be a power user. Master AI tools, prompting, and simple automations. Build without needing to code. The goal is fluency across the entire AI tool ecosystem — knowing which tool to reach for, how to talk to it, and how to string tools together into real workflows.
+
+AI Play: Claude, ChatGPT, Gemini, Perplexity, NotebookLM, n8n, Make, Bolt.new, Lovable, v0.dev, Cursor, Replit, Midjourney, Flux, Runway, ElevenLabs, Suno, Descript, Apify, Relevance AI, Dust.tt
+
+Hardware Play: Arduino starter projects — LED, sensors, servos, basic circuits
+
+##### Layer 2 — Build Better
+
+Add just enough technical skill to build real things. You become a builder, not just a user.
+
+JSON, APIs, web basics, Python lite, SQL, n8n advanced, GitHub, terminal, web scraping, Claude Code, basic JavaScript.
+
+AI Play: RAG systems, AI agents with tools, multi-agent workflows, skills and memory architecture
+
+Hardware Play: Transition from Arduino to Raspberry Pi, first bridge projects between the two
+
+##### Layer 3 — Understand
+
+Go from building to understanding why things work. You can now reason about systems, not just use them.
+
+Computer Science fundamentals, Data Science, SQL advanced, Python properly, JavaScript properly, software architecture, data engineering.
+
+AI Play: Understanding how models work, fine-tuning concepts, production AI systems
+
+Hardware Play: Raspberry Pi advanced projects, connecting hardware to AI software layer
+
+##### Layer 4 — Root Knowledge
+
+The foundation everything else sits on. Most people never come here — it separates engineers from scientists.
+
+Math (linear algebra, probability, calculus), Electrical Engineering, Advanced Computer Science, genuine AI understanding at the model level.
+
+AI Play: How neural networks actually work, training from scratch, AI research literacy
+
+Hardware Play: Electronics fundamentals, circuit design, custom hardware
+
